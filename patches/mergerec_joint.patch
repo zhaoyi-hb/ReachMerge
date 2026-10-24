@@ -1,0 +1,13 @@
+diff --git a/rec_retrieval/datamodule/dataset.py b/rec_retrieval/datamodule/dataset.py
+index ffb6e6f..c450c89 100755
+--- a/rec_retrieval/datamodule/dataset.py
++++ b/rec_retrieval/datamodule/dataset.py
+@@ -85,4 +85,7 @@ class ChainedDataset(Dataset):
+         else:
+             sample_idx = idx - self.cumulative_sizes[dataset_idx - 1]
+ 
+-        return dataset_idx + self.start_dataset_idx, self.datasets[dataset_idx][sample_idx]
++        _inner = self.datasets[dataset_idx][sample_idx]
++        if isinstance(_inner, tuple):
++            _inner = _inner[-1]
++        return dataset_idx + self.start_dataset_idx, _inner

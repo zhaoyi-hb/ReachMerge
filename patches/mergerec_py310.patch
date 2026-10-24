@@ -1,0 +1,119 @@
+diff --git a/finetune_test.py b/finetune_test.py
+index 47b9b76..7605e3a 100755
+--- a/finetune_test.py
++++ b/finetune_test.py
+@@ -29,7 +29,7 @@ def main():
+ 
+     # Load checkpoint
+     finetune_state_dict = torch.load(config.finetune_checkpoint_path, map_location="cpu")
+-    finetune_state_dict.pop("item_embeddings")
++    finetune_state_dict.pop("item_embeddings", None)
+     finetune_state_dict = remove_duplicate_prefix(finetune_state_dict)
+     model.load_state_dict(finetune_state_dict)
+ 
+diff --git a/rec_retrieval/merger/types.py b/rec_retrieval/merger/types.py
+index c9b75fc..f3eef07 100755
+--- a/rec_retrieval/merger/types.py
++++ b/rec_retrieval/merger/types.py
+@@ -12,8 +12,8 @@ __all__ = [
+ ]
+ 
+ 
+-type PathStr = Union[str, Path]
+-type FlattenedModel = torch.Tensor  # (d) where d is the number of parameters in the model, flattened into a 1D tensor
+-type FlattenedModel2D = torch.Tensor  # (N, d) where N is the number of models and d is the number of parameters in each model, flattened into a 2D tensor
+-type StateDict = Dict[str, torch.Tensor]
+-type ShapeDict = Dict[str, torch.Size]
++PathStr = Union[str, Path]
++FlattenedModel = torch.Tensor  # (d) where d is the number of parameters in the model, flattened into a 1D tensor
++FlattenedModel2D = torch.Tensor  # (N, d) where N is the number of models and d is the number of parameters in each model, flattened into a 2D tensor
++StateDict = Dict[str, torch.Tensor]
++ShapeDict = Dict[str, torch.Size]
+diff --git a/rec_retrieval/merger/weight_learning/module/_base.py b/rec_retrieval/merger/weight_learning/module/_base.py
+index 331595e..3500f28 100755
+--- a/rec_retrieval/merger/weight_learning/module/_base.py
++++ b/rec_retrieval/merger/weight_learning/module/_base.py
+@@ -1,5 +1,5 @@
+ from abc import ABC, abstractmethod
+-from typing import TypeVar
++from typing import TypeVar, Generic
+ 
+ import torch
+ from torch import nn
+@@ -7,7 +7,7 @@ from torch import nn
+ T = TypeVar("T", bound=nn.Module)
+ 
+ 
+-class TaskVectorMergingModuleBase[T](nn.Module, ABC):
++class TaskVectorMergingModuleBase(nn.Module, ABC, Generic[T]):
+     def __init__(
+         self,
+         base_model_tensor: torch.Tensor,  # (num_model_parameters,)
+diff --git a/rec_retrieval/merger/weight_learning/module/layer_wise.py b/rec_retrieval/merger/weight_learning/module/layer_wise.py
+index 8a034e5..77bee38 100755
+--- a/rec_retrieval/merger/weight_learning/module/layer_wise.py
++++ b/rec_retrieval/merger/weight_learning/module/layer_wise.py
+@@ -1,5 +1,5 @@
+ from collections import defaultdict
+-from typing import TypeVar
++from typing import TypeVar, Generic
+ 
+ import torch
+ from torch import nn
+@@ -34,7 +34,7 @@ def group_parameters_by_layer(shape_dict):
+ 
+ 
+ # class TaskVectorMergingModuleLayerWise(TaskVectorMergingModuleBase, Generic[T]):
+-class TaskVectorMergingModuleLayerWise[T](TaskVectorMergingModuleBase):
++class TaskVectorMergingModuleLayerWise(TaskVectorMergingModuleBase, Generic[T]):
+     def __init__(
+         self,
+         base_model_tensor: torch.Tensor,  # (num_model_parameters,)
+diff --git a/rec_retrieval/merger/weight_learning/module/task_wise.py b/rec_retrieval/merger/weight_learning/module/task_wise.py
+index 773427a..ed54827 100755
+--- a/rec_retrieval/merger/weight_learning/module/task_wise.py
++++ b/rec_retrieval/merger/weight_learning/module/task_wise.py
+@@ -1,4 +1,4 @@
+-from typing import TypeVar
++from typing import TypeVar, Generic
+ 
+ import torch
+ from torch import nn
+@@ -9,7 +9,7 @@ from ..utils import load_weights, get_state_dict
+ T = TypeVar("T", bound=nn.Module)
+ 
+ 
+-class TaskVectorMergingModuleTaskWise[T](TaskVectorMergingModuleBase):
++class TaskVectorMergingModuleTaskWise(TaskVectorMergingModuleBase, Generic[T]):
+     def __init__(
+         self,
+         base_model_tensor: torch.Tensor,  # (num_model_parameters,)
+diff --git a/rec_retrieval/types/types.py b/rec_retrieval/types/types.py
+index ba4666d..cca8d99 100755
+--- a/rec_retrieval/types/types.py
++++ b/rec_retrieval/types/types.py
+@@ -13,16 +13,16 @@ __all__ = [
+     "TokenizedSequence",
+ ]
+ 
+-type UserID = int
+-type ItemID = int
+-type UserASIN = str
+-type ItemASIN = str
++UserID = int
++ItemID = int
++UserASIN = str
++ItemASIN = str
+ 
+-type Sequence = dict[UserID, list[ItemID]]
+-type MetaData = dict[ItemASIN, dict[str, str]]
++Sequence = dict[UserID, list[ItemID]]
++MetaData = dict[ItemASIN, dict[str, str]]
+ 
+-type UMap = dict[UserASIN, UserID]
+-type SMap = dict[ItemASIN, ItemID]
++UMap = dict[UserASIN, UserID]
++SMap = dict[ItemASIN, ItemID]
+ 
+ TokenizedItem = namedtuple("TokenizedItem", ["input_ids", "token_type_ids", "attr_type_ids"])
+ TokenizedSequence = namedtuple(
